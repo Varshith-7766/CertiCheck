@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AnimatePresence,
@@ -23,7 +23,7 @@ import {
 import { useAuth } from "../lib/auth";
 import { Brand } from "../components/ui";
 import { ThemeToggle } from "../components/ui";
-import { Reveal, Words, Counter, Tilt, Ticker, EASE } from "../components/motion";
+import { Reveal, Words, Counter, Tilt, EASE } from "../components/motion";
 
 export default function Landing() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -241,12 +241,7 @@ export default function Landing() {
                     CHECK CONSOLE · TODAY
                   </div>
                   <div className="relative mt-2 space-y-2 overflow-hidden rounded-2xl">
-                    <motion.div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-transparent via-accent/15 to-transparent"
-                      animate={{ top: ["-15%", "108%"] }}
-                      transition={{ duration: 3.8, repeat: Infinity, ease: "linear" }}
-                    />
+                    <ScanBeam />
                     <MockRow
                       delay={0.75}
                       tone="good"
@@ -280,11 +275,6 @@ export default function Landing() {
             </motion.div>
           </motion.div>
         </section>
-
-        {/* Ticker */}
-        <Ticker duration={30} className="border-y border-line/70 bg-white/60 py-3.5 font-mono text-xs tracking-[0.28em] text-faint dark:bg-white/[0.03]">
-          <TickerItems />
-        </Ticker>
 
         {/* Sticky how-it-works */}
         <HowItWorks />
@@ -450,6 +440,126 @@ function Verdict({
   );
 }
 
+/**
+ * Scanning light beam for the hero console mock. Driven directly with rAF
+ * (translate3d loop) instead of the animation engine, with a bright core
+ * line so it reads clearly in both light and dark mode.
+ */
+function ScanBeam() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const DURATION = 3600;
+    let raf = 0;
+    let elapsed = 0;
+    let last = performance.now();
+    let running = true;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        running = !!entry?.isIntersecting;
+        last = performance.now();
+      },
+      { threshold: 0 }
+    );
+    io.observe(parent);
+
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      if (running) {
+        elapsed = (elapsed + dt) % DURATION;
+        const t = elapsed / DURATION;
+        const h = parent.offsetHeight;
+        el.style.transform = `translate3d(0,${-70 + t * (h + 140)}px,0)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 z-10 will-change-transform"
+    >
+      <div className="h-16 bg-gradient-to-b from-transparent via-accent/25 to-transparent dark:via-accent/40" />
+      <div className="mx-4 h-[2px] bg-accent/80 shadow-[0_0_14px_3px_rgba(0,122,255,0.55)] dark:bg-accent dark:shadow-[0_0_16px_4px_rgba(10,132,255,0.7)]" />
+    </div>
+  );
+}
+
+/**
+ * Scan fill bar for the Step 01 upload visual. Driven directly with rAF
+ * (translate3d loop) instead of the animation engine's infinite repeat,
+ * which stalls on some mounts — the bar froze whenever the loop failed
+ * to start, depending on scroll direction.
+ */
+function ScanBar() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    const track = el?.parentElement;
+    if (!el || !track) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const DURATION = 1800;
+    let raf = 0;
+    let elapsed = 0;
+    let last = performance.now();
+    let running = true;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        running = !!entry?.isIntersecting;
+        last = performance.now();
+      },
+      { threshold: 0 }
+    );
+    io.observe(track);
+
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      if (running) {
+        elapsed = (elapsed + dt) % DURATION;
+        const t = elapsed / DURATION;
+        // easeInOut to match the previous feel
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        const w = track.offsetWidth;
+        const bw = el.offsetWidth;
+        el.style.transform = `translate3d(${-bw * 1.1 + e * (w + bw * 1.2)}px,0,0)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className="h-full rounded-full bg-accent will-change-transform"
+      style={{ width: "32%" }}
+    />
+  );
+}
+
 function MockRow({
   delay,
   tone,
@@ -516,8 +626,18 @@ function HowItWorks() {
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start center", "end center"] });
   const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setActive(Math.min(STEPS.length - 1, Math.max(0, Math.floor(v * STEPS.length))));
+    const cur = activeRef.current;
+    const raw = Math.min(STEPS.length - 1, Math.max(0, Math.floor(v * STEPS.length)));
+    if (raw === cur) return;
+    // Hysteresis dead-zone (~2.5% past the boundary) so slow scrolling
+    // doesn't flicker between steps and retrigger the card animation.
+    const boundary = Math.max(raw, cur) / STEPS.length;
+    const past = raw > cur ? v - boundary : boundary - v;
+    if (past < 0.025 && v > 0.001 && v < 0.999) return;
+    activeRef.current = raw;
+    setActive(raw);
   });
 
   if (reduce) {
@@ -592,7 +712,7 @@ function HowItWorks() {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.35, ease: EASE }}
+                              transition={{ duration: 0.18, ease: EASE }}
                               className="block overflow-hidden text-sm leading-relaxed text-sub"
                             >
                               <span className="block pt-1.5">{s.copy}</span>
@@ -609,14 +729,13 @@ function HowItWorks() {
             <div className="relative hidden lg:block">
               <Tilt max={5} className="block">
               <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={step.n}
-                  initial={{ opacity: 0, y: 26, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -18, scale: 0.98 }}
-                  transition={{ duration: 0.4, ease: EASE }}
-                  className="rounded-[28px] border border-line/70 bg-card p-8 shadow-[0_24px_70px_rgba(0,0,0,0.10)]"
-                >
+                  <motion.div
+                    key={step.n}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE } }}
+                    exit={{ opacity: 0, y: -10, transition: { duration: 0.12, ease: EASE } }}
+                    className="rounded-[28px] border border-line/70 bg-card p-8 shadow-[0_24px_70px_rgba(0,0,0,0.10)]"
+                  >
                   <StepVisual visual={step.visual} />
                   <div className="mt-5 flex items-center gap-3">
                     <span className="grid size-11 place-items-center rounded-2xl bg-accent/10 text-accent">
@@ -655,12 +774,7 @@ function StepVisual({ visual }: { visual: string }) {
           </div>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line/60">
-          <motion.div
-            className="h-full w-2/3 rounded-full bg-accent"
-            animate={{ x: ["-110%", "320%"] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            style={{ width: "32%" }}
-          />
+          <ScanBar />
         </div>
       </div>
     );
@@ -693,16 +807,3 @@ function StepVisual({ visual }: { visual: string }) {
   );
 }
 
-function TickerItems() {
-  const items = ["SHA-256 SEALED", "OCR LIVE", "SEPOLIA ANCHORED", "ZERO STORAGE BLOAT", "TAMPER-EVIDENT"];
-  return (
-    <>
-      {items.map((item) => (
-        <span key={item} className="mx-7 flex items-center whitespace-nowrap">
-          {item}
-          <span className="ml-14 text-accent/50">◆</span>
-        </span>
-      ))}
-    </>
-  );
-}

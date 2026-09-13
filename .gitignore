@@ -27,3 +27,9 @@ f[0-9].txt
 *.tmp.mjs
 admin_truth.tsx
 dev-preview*.log
+.gstack/
+
+# large local binaries + probe outputs (kept on disk, out of history)
+backend/eng.traineddata
+backend/scripts/_*.txt
+frontend/.lovable/
