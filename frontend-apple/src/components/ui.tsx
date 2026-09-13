@@ -1,6 +1,6 @@
 import { useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Eye, EyeOff, AlertCircle, Info, CheckCircle2, Sun, Moon } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Info, CheckCircle2, Sun, Moon } from "lucide-react";
 import { useScrolled } from "./motion";
 import { useTheme } from "../lib/theme";
 
@@ -9,9 +9,7 @@ import { useTheme } from "../lib/theme";
 export function Brand({ sub }: { sub?: string }) {
   return (
     <Link to="/" className="flex items-center gap-2.5" aria-label="CertiCheck home">
-      <span className="grid size-9 place-items-center rounded-xl bg-accent text-white shadow-[0_4px_14px_rgba(0,122,255,0.4)]">
-        <ShieldCheck size={19} strokeWidth={2.25} />
-      </span>
+      <img src="/logo.png" alt="CertiCheck logo" className="size-9 rounded-xl object-cover dark:invert" />
       <span className="leading-none">
         <span className="block text-[17px] font-semibold tracking-tight text-ink">CertiCheck</span>
         {sub && (

@@ -30,6 +30,9 @@ export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const reduce = useReducedMotion();
 
+  // Apple.com-style bar: full-width, slim, flush under the browser chrome
+  // with constant translucent frost.
+
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
@@ -41,78 +44,83 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-canvas font-sans text-ink antialiased">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-line/70 bg-white/70 backdrop-blur-xl dark:bg-black/60">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5">
+      {/* Floating island nav */}
+      <motion.header
+        initial={{ y: -48, opacity: 0 }}
+        animate={{ y: "0%", opacity: 1 }}
+        transition={{ duration: 0.55, ease: EASE }}
+        className="fixed inset-x-0 top-0 z-40 border-b border-line/60 bg-white/70 backdrop-blur-xl dark:bg-black/60"
+      >
+        <div className="mx-auto flex h-12 w-full max-w-6xl items-center justify-between px-5">
           <Brand sub="TRUST PROTOCOL" />
           <nav className="hidden items-center gap-1 text-sm font-medium text-sub md:flex">
-            <a href="#how" className="rounded-full px-3.5 py-2 transition-colors hover:bg-fill hover:text-ink">
-              How it works
-            </a>
-            <a href="#verdicts" className="rounded-full px-3.5 py-2 transition-colors hover:bg-fill hover:text-ink">
-              Verdicts
-            </a>
-            <a href="#roles" className="rounded-full px-3.5 py-2 transition-colors hover:bg-fill hover:text-ink">
-              Roles
-            </a>
-          </nav>
-          <div className="flex items-center gap-2">
-            {isAuthenticated && user ? (
-              <>
-                <Link
-                  to={user.role === "ADMIN" ? "/admin" : "/checker"}
-                  className="rounded-full bg-coal px-4 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.03] active:scale-[0.98]"
-                >
-                  Open console
-                </Link>
-                <button
-                  onClick={() => void logout()}
-                  className="hidden cursor-pointer rounded-full px-3 py-2 text-sm font-medium text-sub transition-colors hover:text-ink sm:block"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="hidden rounded-full px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/10 sm:block"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/register"
-                  className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(0,122,255,0.35)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
-                >
-                  Get started
-                </Link>
-              </>
-            )}
-            <ThemeToggle />
-            <button
-              onClick={() => setMobileMenuOpen((v) => !v)}
-              aria-label="Menu"
-              className="grid size-9 cursor-pointer place-items-center rounded-full text-sub transition-colors hover:bg-fill md:hidden"
-            >
-              {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
-            </button>
+              <a href="#how" className="rounded-full px-3.5 py-2 transition-all duration-200 hover:bg-fill hover:text-ink active:scale-[0.97]">
+                How it works
+              </a>
+              <a href="#verdicts" className="rounded-full px-3.5 py-2 transition-all duration-200 hover:bg-fill hover:text-ink active:scale-[0.97]">
+                Verdicts
+              </a>
+              <a href="#roles" className="rounded-full px-3.5 py-2 transition-all duration-200 hover:bg-fill hover:text-ink active:scale-[0.97]">
+                Roles
+              </a>
+            </nav>
+            <div className="flex items-center gap-1.5">
+              {isAuthenticated && user ? (
+                <>
+                  <Link
+                    to={user.role === "ADMIN" ? "/admin" : "/checker"}
+                    className="rounded-full bg-coal px-4 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.03] active:scale-[0.98]"
+                  >
+                    Open console
+                  </Link>
+                  <button
+                    onClick={() => void logout()}
+                    className="hidden cursor-pointer rounded-full px-3 py-2 text-sm font-medium text-sub transition-colors hover:text-ink sm:block"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="hidden rounded-full px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/10 sm:block"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(0,122,255,0.35)] transition-transform hover:scale-[1.03] active:scale-[0.98]"
+                  >
+                    Get started
+                  </Link>
+                </>
+              )}
+              <ThemeToggle />
+              <button
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                aria-label="Menu"
+                className="grid size-9 cursor-pointer place-items-center rounded-full text-sub transition-colors hover:bg-fill md:hidden"
+              >
+                {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+              </button>
+            </div>
           </div>
-        </div>
         <AnimatePresence initial={false}>
           {mobileMenuOpen && (
             <motion.nav
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.28, ease: EASE }}
-              className="overflow-hidden border-t border-line/70 md:hidden"
+              initial={{ height: 0, opacity: 0, y: -8 }}
+              animate={{ height: "auto", opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              className="overflow-hidden border-t border-line/60 bg-white/90 backdrop-blur-xl dark:bg-black/85 md:hidden"
             >
-              <div className="flex flex-col gap-1 px-5 py-3 text-[15px] font-medium">
-                <a href="#how" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sub hover:bg-fill">How it works</a>
-                <a href="#verdicts" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sub hover:bg-fill">Verdicts</a>
-                <a href="#roles" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-sub hover:bg-fill">Roles</a>
+              <div className="flex flex-col gap-1 p-3 text-[15px] font-medium">
+                <a href="#how" onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sub transition-colors hover:bg-fill hover:text-ink">How it works</a>
+                <a href="#verdicts" onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sub transition-colors hover:bg-fill hover:text-ink">Verdicts</a>
+                <a href="#roles" onClick={() => setMobileMenuOpen(false)} className="rounded-2xl px-4 py-3 text-sub transition-colors hover:bg-fill hover:text-ink">Roles</a>
                 {!isAuthenticated && (
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-3 py-2.5 text-accent">
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="rounded-2xl bg-accent px-4 py-3 text-center font-semibold text-white">
                     Sign in
                   </Link>
                 )}
@@ -120,7 +128,7 @@ export default function Landing() {
             </motion.nav>
           )}
         </AnimatePresence>
-      </header>
+      </motion.header>
 
       <main>
         {/* Hero */}
@@ -135,7 +143,7 @@ export default function Landing() {
             {...(reduce ? {} : { style: { y: heroGlowY } })}
           />
           <motion.div
-            className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-14 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr]"
+            className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-24 sm:pt-28 lg:grid-cols-[1.05fr_0.95fr]"
             {...(reduce ? {} : { style: { opacity: heroFade } })}
           >
             <div>
@@ -310,28 +318,64 @@ export default function Landing() {
 
         {/* Roles + CTA */}
         <section id="roles" className="mx-auto w-full max-w-6xl scroll-mt-20 px-5 py-16 sm:py-20">
-          <div className="grid items-stretch gap-4 md:grid-cols-2">
+          <Reveal>
+            <div className="text-xs font-semibold tracking-[0.14em] text-accent">GET STARTED</div>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Pick your console</h2>
+          </Reveal>
+          <div className="mt-8 grid items-stretch gap-4 md:grid-cols-2">
             <Reveal>
-              <div className="flex h-full flex-col rounded-3xl border border-line/70 bg-card p-8 shadow-[0_8px_30px_rgba(0,0,0,0.05)]">
-                <Zap size={24} className="text-accent" />
-                <h3 className="mt-4 text-2xl font-bold tracking-tight text-ink">For admins</h3>
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-sub">
-                  Own your institution&apos;s ledger. Upload once, anchor forever, watch verifications roll in.
+              <div className="flex h-full flex-col rounded-3xl border border-line/70 bg-card p-8 shadow-[0_8px_30px_rgba(0,0,0,0.05)] transition-transform duration-300 hover:-translate-y-1.5">
+                <span className="grid size-12 place-items-center rounded-2xl bg-mint/[0.12] text-mint-deep">
+                  <Zap size={22} />
+                </span>
+                <h3 className="mt-5 text-2xl font-bold tracking-tight text-ink">For admins</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-sub">
+                  Own your institution&apos;s ledger. Upload once, anchor forever.
                 </p>
-                <Link to="/register" className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-coal px-5 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.03] active:scale-[0.98]">
-                  Get started <ArrowRight size={16} />
+                <ul className="mt-5 space-y-2.5 text-sm text-sub">
+                  {["Upload images, PDFs & docs", "Auto-anchored on Sepolia", "Watch verifications roll in"].map((f) => (
+                    <li key={f} className="flex items-center gap-2.5">
+                      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-mint/[0.14] text-mint-deep">
+                        <Check size={12} strokeWidth={3} />
+                      </span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/register"
+                  className="group mt-6 inline-flex w-fit items-center gap-1.5 text-[15px] font-semibold text-accent"
+                >
+                  Get started
+                  <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
                 </Link>
               </div>
             </Reveal>
             <Reveal delay={0.1}>
-              <div className="flex h-full flex-col rounded-3xl bg-coal p-8 text-white shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
-                <Lock size={24} className="text-white/80" />
-                <h3 className="mt-4 text-2xl font-bold tracking-tight">For checkers</h3>
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-white/70">
+              <div className="flex h-full flex-col rounded-3xl border border-line/70 bg-card p-8 shadow-[0_8px_30px_rgba(0,0,0,0.05)] transition-transform duration-300 hover:-translate-y-1.5">
+                <span className="grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
+                  <Lock size={22} />
+                </span>
+                <h3 className="mt-5 text-2xl font-bold tracking-tight text-ink">For checkers</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-sub">
                   Hiring? Drop in the certificate and know in seconds whether to trust it.
                 </p>
-                <Link to="/login" className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition-transform hover:scale-[1.03] active:scale-[0.98]">
-                  Sign in to verify <ArrowRight size={16} />
+                <ul className="mt-5 space-y-2.5 text-sm text-sub">
+                  {["Verify any certificate copy", "Verdict in seconds, with proof", "Full history included"].map((f) => (
+                    <li key={f} className="flex items-center gap-2.5">
+                      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+                        <Check size={12} strokeWidth={3} />
+                      </span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/login"
+                  className="group mt-6 inline-flex w-fit items-center gap-1.5 text-[15px] font-semibold text-accent"
+                >
+                  Sign in to verify
+                  <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
                 </Link>
               </div>
             </Reveal>
@@ -365,9 +409,7 @@ export default function Landing() {
       <footer className="border-t border-line/70">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-8 place-items-center rounded-[10px] bg-accent text-white">
-              <ShieldCheck size={16} strokeWidth={2.25} />
-            </span>
+            <img src="/logo.png" alt="CertiCheck logo" className="size-8 rounded-[10px] object-cover dark:invert" />
             <span className="text-[15px] font-semibold tracking-tight text-ink">CertiCheck</span>
           </div>
           <div className="flex items-center gap-5 text-[13px] font-medium text-sub">
@@ -565,6 +607,7 @@ function HowItWorks() {
             </div>
 
             <div className="relative hidden lg:block">
+              <Tilt max={5} className="block">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={step.n}
@@ -589,6 +632,7 @@ function HowItWorks() {
                   <p className="mt-3 text-[15px] leading-relaxed text-sub">{step.copy}</p>
                 </motion.div>
               </AnimatePresence>
+              </Tilt>
             </div>
           </div>
         </div>
