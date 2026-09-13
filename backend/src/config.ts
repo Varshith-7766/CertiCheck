@@ -12,6 +12,10 @@ export const config = {
   // HttpOnly session cookie
   sessionTtlDays: parseInt(process.env.SESSION_TTL_DAYS || "7", 10),
   cookieSecure: process.env.COOKIE_SECURE === "true",
+  // Split-domain deploys (frontend + API on different hosts) are cross-site:
+  // browsers reject SameSite=Lax cookies on the login POST. COOKIE_SAMESITE=none
+  // (+ Secure) is required in prod; keep "lax" for local same-site dev.
+  cookieSameSite: (process.env.COOKIE_SAMESITE === "none" ? "none" : "lax") as "lax" | "none",
 
   // 64 hex chars (32 random bytes) — AES-256-GCM key for TOTP secrets at rest.
   // Sessions are opaque DB-backed tokens; no JWT is used anywhere.

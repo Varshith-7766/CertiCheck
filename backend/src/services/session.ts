@@ -132,14 +132,14 @@ export const sessionCookieName = SESSION_COOKIE;
 
 export function sessionCookieOptions(): {
   httpOnly: boolean;
-  sameSite: "lax";
+  sameSite: "lax" | "none";
   secure: boolean;
   maxAge: number;
   path: string;
 } {
   return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: config.cookieSameSite,
     secure: config.cookieSecure,
     maxAge: config.sessionTtlDays * 24 * 60 * 60 * 1000,
     path: "/",

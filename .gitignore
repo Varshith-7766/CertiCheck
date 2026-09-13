@@ -31,5 +31,6 @@ dev-preview*.log
 
 # large local binaries + probe outputs (kept on disk, out of history)
 backend/eng.traineddata
+backend/lang-data/
 backend/scripts/_*.txt
 frontend/.lovable/

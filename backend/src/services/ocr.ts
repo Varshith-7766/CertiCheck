@@ -3,7 +3,9 @@ import sharp from "sharp";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import fs from "fs/promises";
+import { existsSync } from "fs";
 import os from "os";
+import path from "path";
 
 export interface OcrResult {
   text: string;
@@ -37,8 +39,16 @@ const waiters: Array<() => void> = [];
 async function ensurePool(): Promise<void> {
   if (!poolInit) {
     poolInit = (async () => {
+      // Prefer a pre-downloaded language pack (deploy builds fetch
+      // eng.traineddata into TESSERACT_LANG_PATH) so cold starts and
+      // free-tier wakes never wait on a ~50MB download. Falls back to
+      // tesseract.js default fetching when the file is absent (local dev).
+      const langDir = process.env.TESSERACT_LANG_PATH || path.join(process.cwd(), "lang-data");
+      const bundled = existsSync(path.join(langDir, "eng.traineddata"));
+      const workerOpts = bundled ? { langPath: langDir, cacheMethod: "none" as const } : {};
+      if (bundled) console.log(`[ocr] using bundled language data (${langDir})`);
       for (let i = 0; i < OCR_POOL_SIZE; i++) {
-        const worker = await createWorker("eng");
+        const worker = await createWorker("eng", undefined, workerOpts);
         workersCreated++;
         pool.push({ worker, busy: false });
       }

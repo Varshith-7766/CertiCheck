@@ -26,6 +26,10 @@ export const prisma = new PrismaClient();
 
 const app = express();
 
+// Behind a proxy (Render/Railway) Express sees internal http — without this,
+// Secure cross-site session cookies are never set and login breaks in prod.
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(
   cors({
