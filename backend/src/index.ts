@@ -208,7 +208,9 @@ async function start() {
       );
     }
 
-    app.listen(config.port, () => {
+    // Bind all interfaces: the host's routing mesh cannot reach a
+    // localhost-only listener (deploys show Live yet serve nothing).
+    app.listen(config.port, "0.0.0.0", () => {
       console.log(`Server running on http://localhost:${config.port}`);
       console.log(`CORS origin: ${config.corsOrigin}`);
       console.log(`Node env: ${config.nodeEnv}`);
