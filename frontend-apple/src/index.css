@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-canvas: #f5f5f7;
+  --color-card: #ffffff;
+  --color-ink: #1d1d1f;
+  --color-coal: #1d1d1f;
+  --color-sub: #6e6e73;
+  --color-faint: #aeaeb2;
+  --color-line: #e5e5ea;
+  --color-fill: #efeff4;
+  --color-accent: #007aff;
+  --color-accent-deep: #005ec2;
+  --color-good: #34c759;
+  --color-good-deep: #248a3d;
+  --color-warn: #ff9f0a;
+  --color-bad: #ff3b30;
+  --color-bad-deep: #d70015;
+}
+
+/* Apple dark mode: same semantic tokens, flipped values — every
+   token-driven surface adapts with zero per-file changes. */
+.dark {
+  --color-canvas: #000000;
+  --color-card: #1c1c1e;
+  --color-ink: #f5f5f7;
+  --color-sub: #a1a1a6;
+  --color-faint: #6e6e73;
+  --color-line: #38383a;
+  --color-fill: #2c2c2e;
+  --color-accent: #0a84ff;
+  --color-accent-deep: #409cff;
+  --color-good: #30d158;
+  --color-good-deep: #30d158;
+  --color-warn: #ffd60a;
+  --color-bad: #ff453a;
+  --color-bad-deep: #ff6961;
+  color-scheme: dark;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Gentle page entrance */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-enter-1 {
+  animation: page-enter 0.55s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-enter-2 {
+  animation: page-enter 0.55s 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-enter-3 {
+  animation: page-enter 0.55s 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Soft spinner */
+@keyframes soft-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  border-radius: 9999px;
+  border: 2.5px solid currentColor;
+  border-top-color: transparent;
+  animation: soft-spin 0.9s linear infinite;
+}
+
+/* Subtle live pulse dot */
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+.live-dot {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Visible keyboard focus everywhere */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-enter,
+  .animate-enter-1,
+  .animate-enter-2,
+  .animate-enter-3 {
+    animation: none;
+  }
+  .spinner,
+  .live-dot {
+    animation-duration: 2s;
+  }
+}
