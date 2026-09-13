@@ -6,36 +6,39 @@ Verify certificates in seconds using OCR + SHA-256 fingerprinting.
 
 ```
 certicheck-frontend/
-├── frontend/          # TanStack Start + React + Tailwind CSS
+├── frontend/          # Apple-style UI: React 19 + Vite + Tailwind CSS v4
 │   ├── src/
-│   │   ├── routes/    # Pages (landing, login, register, admin, checker)
-│   │   ├── lib/       # API client, auth context, utilities
-│   │   ├── components/
-│   │   └── styles.css
+│   │   ├── pages/       # Landing, login, register, admin, checker, 2FA, settings
+│   │   ├── lib/         # API client, auth context, theme
+│   │   ├── components/  # Brand, motion primitives (rAF ticker/beam), UI
+│   │   └── index.css    # Theme tokens (light/dark)
 │   └── package.json
-└── backend/           # Express.js + Prisma + Tesseract.js
-    ├── src/
-    │   ├── routes/    # API endpoints (auth, certificates, verify, stats)
-    │   ├── services/  # OCR, hashing, auth logic
-    │   └── middleware/ # JWT auth, file upload
-    ├── prisma/
-    └── package.json
+├── backend/           # Express.js + Prisma (SQLite) + Tesseract.js + blockchain
+│   ├── src/
+│   │   ├── routes/    # API endpoints (auth, certificates, verify, stats)
+│   │   ├── services/  # OCR, hashing, auth, sessions, blockchain anchoring
+│   │   │              # (blockchain.ts, anchorQueue.ts — Sepolia via ethers.js)
+│   │   └── middleware/ # Cookie-session auth, rate limits, file upload
+│   ├── prisma/        # schema.prisma (SQLite)
+│   └── package.json
+└── design-system/     # Brand + design source of truth
 ```
 
 ## Prerequisites
 
-- **Node.js** 18+ (or Bun)
-- **PostgreSQL** running locally or via a service
-- **npm** or **bun**
+- **Node.js** 18+
+- **npm**
+- No database server needed — SQLite file, zero setup
 
 ## Quick Start
 
 ### 1. Database Setup
 
-Make sure PostgreSQL is running, then create the database:
+Nothing to install — SQLite just works. Create the tables:
 
-```sql
-CREATE DATABASE certicheck;
+```bash
+cd backend
+npx prisma db push
 ```
 
 ### 2. Backend
@@ -47,10 +50,7 @@ cd backend
 npm install
 
 # Configure environment
-# Edit .env with your PostgreSQL credentials
-
-# Run database migration
-npx prisma db push
+# Copy .env.example to .env and fill in (see Railway/env docs)
 
 # Start the server
 npm run dev
@@ -64,13 +64,13 @@ Backend runs on `http://localhost:3001`
 cd frontend
 
 # Install dependencies
-bun install  # or npm install
+npm install  # or npm ci for a clean install
 
 # Start dev server
-bun run dev  # or npm run dev
+npm run dev
 ```
 
-Frontend runs on `http://localhost:3000`
+Frontend runs on `http://localhost:5174`
 
 ## API Endpoints
 
@@ -91,15 +91,17 @@ Frontend runs on `http://localhost:3000`
 1. **Admin** uploads a certificate (image/PDF/DOC)
 2. **OCR** extracts text → **SHA-256** generates a 64-char hash
 3. **Hash is stored** in SQLite (Prisma) — only the SHA-256 hash per certificate
-4. **Checker** uploads a copy → same OCR + hash pipeline
-5. **Hash comparison**: exact match = VERIFIED, text similarity >80% but hash differs = TAMPERED, no match = UNREGISTERED
+4. **Hash is anchored on-chain** — sealed to Ethereum Sepolia via smart contract (async queue, file deleted after)
+5. **Checker** uploads a copy → same OCR + hash pipeline
+6. **Hash comparison**: exact match = VERIFIED, text similarity >80% but hash differs = TAMPERED, no match = UNREGISTERED
 
 ## Tech Stack
 
-- **Frontend**: React 19, TanStack Router, Tailwind CSS v4, shadcn/ui
+- **Frontend**: React 19, Vite, Tailwind CSS v4, motion
 - **Backend**: Express.js, Prisma ORM, Tesseract.js OCR, Sharp
 - **Database**: SQLite (Prisma ORM)
 - **Auth**: opaque httpOnly cookie sessions (DB-backed, revocable) + bcrypt + TOTP 2FA
+- **Blockchain**: Ethereum Sepolia anchoring via ethers.js (async anchor queue seals every SHA-256 hash on-chain)
 - **Storage**: Only SHA-256 hashes stored (not files)
 
 ---
