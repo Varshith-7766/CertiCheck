@@ -1,5 +1,0 @@
-- [ ] Build CertiCheck frontend shell and visual system
-- [ ] Add simulated Admin and Checker authentication flows
-- [ ] Add upload, OCR, SHA-256, and three-state verification interactions
-- [ ] Add animated scrolling explainer sections and responsive layout
-- [ ] Verify preview and clear build/runtime errors
