@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         String    @default("CHECKER")
+  institution  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Email verification
+  emailVerified            Boolean  @default(false)
+  verificationTokenHash    String?
+  verificationTokenExpires DateTime?
+
+  // Password reset
+  resetTokenHash    String?
+  resetTokenExpires DateTime?
+  passwordChangedAt DateTime?
+
+  @@index([resetTokenHash])
+
+  // TOTP 2FA
+  totpSecret   String?
+  totpEnabled  Boolean  @default(false)
+  // Admins must enroll 2FA before using the admin console
+  totpRequired Boolean  @default(false)
+
+  certificates  Certificate[]
+  verifications VerificationLog[]
+  sessions      Session[]
+  recoveryCodes RecoveryCode[]
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  tokenHash    String   @unique
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  lastActiveAt DateTime @default(now())
+  userAgent    String?
+  ip           String?
+  revoked      Boolean  @default(false)
+  pending2FA   Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RecoveryCode {
+  id        String   @id @default(uuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id           String   @id @default(uuid())
+  sha256Hash   String   @unique
+  ocrText      String
+  fileName     String
+  fileType     String
+  fileSize     Int
+  studentName  String?
+  rollNumber   String?
+  institution  String?
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  // Blockchain anchoring (Sepolia) — set when the hash is anchored on-chain.
+  txHash       String?
+  blockNumber  Int?
+  chainId      Int?
+  anchoredAt   DateTime?
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([anchoredAt])
+}
+
+model VerificationLog {
+  id              String   @id @default(uuid())
+  certificateHash String
+  result          String
+  similarityScore Float?
+  submittedHash   String
+  ocrText         String?
+  fileName        String
+  verifiedById    String
+  createdAt       DateTime @default(now())
+
+  // Blockchain anchoring of the verification outcome (event-only tx).
+  // chainStatus: null = not attempted, "ANCHORED" = on-chain event,
+  // "PENDING" = failed/awaiting (message surfaced, never hidden).
+  chainTxHash  String?
+  chainStatus  String?
+
+  verifiedBy User @relation(fields: [verifiedById], references: [id])
+}

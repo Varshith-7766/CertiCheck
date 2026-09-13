@@ -1,0 +1,29 @@
+# dependencies / build output
+node_modules/
+backend/dist/
+frontend/dist/
+frontend/.output/
+frontend/.nitro/
+frontend/.tanstack/
+frontend/.wrangler/
+*.log
+
+# env & secrets — never commit (copy backend/.env.example pattern locally)
+.env
+
+# local runtime data
+backend/uploads/
+*.db
+*.db-journal
+backend/artifacts/
+backend/cache/
+
+# session scratch (kept on disk, out of history)
+ADMIN_*.txt
+DIV*.txt
+DUMP326.txt
+BL2.txt
+f[0-9].txt
+*.tmp.mjs
+admin_truth.tsx
+dev-preview*.log
