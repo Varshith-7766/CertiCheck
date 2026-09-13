@@ -22,6 +22,10 @@
   --color-warn: #ff9f0a;
   --color-bad: #ff3b30;
   --color-bad-deep: #d70015;
+
+  /* Spotlight nav glow (translucent accent wash + ambience line) */
+  --spot-glow: rgba(0, 122, 255, 0.22);
+  --amb-glow: rgba(0, 122, 255, 0.9);
 }
 
 /* Apple dark mode: same semantic tokens, flipped values — every
@@ -42,6 +46,10 @@
   --color-bad: #ff453a;
   --color-bad-deep: #ff6961;
   color-scheme: dark;
+
+  /* Spotlight nav glow: brighter wash on dark glass */
+  --spot-glow: rgba(10, 132, 255, 0.28);
+  --amb-glow: rgba(10, 132, 255, 1);
 }
 
 html {

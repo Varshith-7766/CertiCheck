@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AnimatePresence,
+  animate,
   motion,
   useMotionValueEvent,
   useReducedMotion,
@@ -24,6 +25,147 @@ import { useAuth } from "../lib/auth";
 import { Brand } from "../components/ui";
 import { ThemeToggle } from "../components/ui";
 import { Reveal, Words, Counter, Tilt, EASE } from "../components/motion";
+
+const SPOT_LINKS = [
+  { label: "How it works", href: "#how" },
+  { label: "Verdicts", href: "#verdicts" },
+  { label: "Roles", href: "#roles" },
+];
+
+/**
+ * EXPERIMENT: Vengeance-style spotlight nav, translucent-only edition.
+ * Mouse-following accent wash + spring-loaded ambience underline under
+ * the active link. No solid surfaces — the bar's frost stays untouched.
+ * Positions are written straight to CSS vars (no re-renders); only the
+ * settle-back springs use one-shot motion `animate` calls.
+ */
+function SpotlightLinks() {
+  const reduce = useReducedMotion();
+  const navRef = useRef<HTMLElement>(null);
+  const [active, setActive] = useState(0);
+  const [hover, setHover] = useState(false);
+  const spotX = useRef(0);
+  const ambX = useRef(0);
+  const leaveAnim = useRef<{ stop: () => void } | null>(null);
+
+  const centerOf = (nav: HTMLElement, index: number) => {
+    const item = nav.querySelector(`[data-spot="${index}"]`);
+    if (!item) return null;
+    const nr = nav.getBoundingClientRect();
+    const ir = item.getBoundingClientRect();
+    return ir.left - nr.left + ir.width / 2;
+  };
+
+  // Spring the ambience line to the active link on click.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav || reduce) return;
+    const target = centerOf(nav, active);
+    if (target == null) return;
+    const c = animate(ambX.current, target, {
+      type: "spring",
+      stiffness: 260,
+      damping: 26,
+      onUpdate: (v) => {
+        ambX.current = v;
+        nav.style.setProperty("--ambience-x", `${v}px`);
+      },
+    });
+    return () => c.stop();
+  }, [active, reduce]);
+
+  // Park both lights on the default active link after mount.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav || reduce) return;
+    const x = centerOf(nav, active);
+    if (x == null) return;
+    ambX.current = x;
+    spotX.current = x;
+    nav.style.setProperty("--ambience-x", `${x}px`);
+    nav.style.setProperty("--spotlight-x", `${x}px`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduce]);
+
+  useEffect(() => () => leaveAnim.current?.stop(), []);
+
+  if (reduce) {
+    return (
+      <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
+        {SPOT_LINKS.map((l) => (
+          <a key={l.href} href={l.href} className="rounded-full px-3.5 py-2 text-sub transition-colors hover:text-ink">
+            {l.label}
+          </a>
+        ))}
+      </nav>
+    );
+  }
+
+  return (
+    <nav
+      ref={navRef}
+      aria-label="Primary"
+      onMouseMove={(e) => {
+        const nav = navRef.current;
+        if (!nav) return;
+        leaveAnim.current?.stop();
+        const x = e.clientX - nav.getBoundingClientRect().left;
+        spotX.current = x;
+        nav.style.setProperty("--spotlight-x", `${x}px`);
+        setHover(true);
+      }}
+      onMouseLeave={() => {
+        const nav = navRef.current;
+        if (!nav) return;
+        setHover(false);
+        leaveAnim.current?.stop();
+        leaveAnim.current = animate(spotX.current, ambX.current, {
+          type: "spring",
+          stiffness: 260,
+          damping: 26,
+          onUpdate: (v) => {
+            spotX.current = v;
+            nav.style.setProperty("--spotlight-x", `${v}px`);
+          },
+        });
+      }}
+      className="relative hidden items-center text-sm font-medium md:flex"
+    >
+      {/* mouse spotlight wash */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+        style={{
+          opacity: hover ? 1 : 0,
+          background:
+            "radial-gradient(110px circle at var(--spotlight-x, 50%) 100%, var(--spot-glow) 0%, transparent 65%)",
+        }}
+      />
+      {/* active-item ambience underline */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0.5 h-[2px]"
+        style={{
+          background:
+            "radial-gradient(55px circle at var(--ambience-x, 20px) 50%, var(--amb-glow) 0%, transparent 100%)",
+        }}
+      />
+      {SPOT_LINKS.map((l, i) => (
+        <a
+          key={l.href}
+          href={l.href}
+          data-spot={i}
+          onClick={() => setActive(i)}
+          className={`relative z-10 rounded-full px-3.5 py-2 transition-colors duration-200 ${
+            i === active ? "text-ink" : "text-sub hover:text-ink"
+          }`}
+        >
+          {l.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
 
 export default function Landing() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -49,21 +191,11 @@ export default function Landing() {
         initial={{ y: -48, opacity: 0 }}
         animate={{ y: "0%", opacity: 1 }}
         transition={{ duration: 0.55, ease: EASE }}
-        className="fixed inset-x-0 top-0 z-40 border-b border-line/60 bg-white/70 backdrop-blur-xl dark:bg-black/60"
+        className="fixed inset-x-0 top-0 z-40 border-b border-line/60 bg-white/20 backdrop-blur-2xl dark:bg-black/40"
       >
         <div className="mx-auto flex h-12 w-full max-w-6xl items-center justify-between px-5">
           <Brand sub="TRUST PROTOCOL" />
-          <nav className="hidden items-center gap-1 text-sm font-medium text-sub md:flex">
-              <a href="#how" className="rounded-full px-3.5 py-2 transition-all duration-200 hover:bg-fill hover:text-ink active:scale-[0.97]">
-                How it works
-              </a>
-              <a href="#verdicts" className="rounded-full px-3.5 py-2 transition-all duration-200 hover:bg-fill hover:text-ink active:scale-[0.97]">
-                Verdicts
-              </a>
-              <a href="#roles" className="rounded-full px-3.5 py-2 transition-all duration-200 hover:bg-fill hover:text-ink active:scale-[0.97]">
-                Roles
-              </a>
-            </nav>
+          <SpotlightLinks />
             <div className="flex items-center gap-1.5">
               {isAuthenticated && user ? (
                 <>
@@ -372,22 +504,22 @@ export default function Landing() {
           </div>
 
           <Reveal delay={0.05}>
-            <div className="relative mt-4 overflow-hidden rounded-[28px] bg-coal px-8 py-12 text-center text-white sm:py-16">
+            <div className="relative mt-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#d9e6f1] via-[#e9f0f7] to-[#f7fafc] px-8 py-12 text-center text-ink dark:bg-coal dark:bg-none dark:text-white sm:py-16">
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(0,122,255,0.28),transparent)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(0,122,255,0.28),transparent)] opacity-40 dark:opacity-100"
               />
               <h2 className="relative text-3xl font-bold tracking-tight sm:text-5xl">
                 Stop guessing.
                 <br />
                 Start proving.
               </h2>
-              <p className="relative mx-auto mt-3 max-w-md text-[15px] text-white/70">
+              <p className="relative mx-auto mt-3 max-w-md text-[15px] text-sub dark:text-white/70">
                 Create an account, upload your first certificate, and watch the ledger do the rest.
               </p>
               <Link
                 to="/register"
-                className="relative mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-black transition-transform hover:scale-[1.04] active:scale-[0.98]"
+                className="relative mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_24px_rgba(0,122,255,0.35)] transition-transform hover:scale-[1.04] active:scale-[0.98] dark:bg-white dark:text-black dark:shadow-none"
               >
                 Launch CertiCheck <ArrowRight size={17} />
               </Link>
