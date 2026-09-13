@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, LogOut, ShieldCheck, KeyRound, Smartphone, CheckCircle2, Mail, RefreshCw } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../lib/auth";
 import { authApi } from "../lib/api";
 
@@ -246,12 +247,20 @@ function Setup2FAPage() {
                   <>
                     <div className="font-mono text-[10px] tracking-[0.2em] text-foreground/50">STEP 2B — SCAN WITH AUTHENTICATOR</div>
                     <p className="mt-2 text-xs text-foreground/60">
-                      Open Google Authenticator (or any TOTP app), tap the + and enter this secret manually:
+                      Open Google Authenticator (or any TOTP app), tap +, and scan — fastest. Manual entry below if you prefer.
                     </p>
-                    <div className="mt-3 break-all font-mono text-sm text-accent">{totpSecret}</div>
                     {otpauthUrl && (
-                      <div className="mt-2 break-all font-mono text-[10px] text-foreground/35">{otpauthUrl}</div>
+                      <div className="mt-4 flex flex-col items-center gap-3 border border-line bg-ink p-5">
+                        <div className="bg-white p-3">
+                          <QRCodeSVG value={otpauthUrl} size={192} level="M" />
+                        </div>
+                        <div className="font-mono text-[10px] tracking-[0.2em] text-foreground/50">
+                          SCAN TO ENROLL INSTANTLY
+                        </div>
+                      </div>
                     )}
+                    <div className="mt-4 font-mono text-[10px] tracking-[0.2em] text-foreground/50">OR ENTER MANUALLY</div>
+                    <div className="mt-2 break-all font-mono text-sm text-accent">{totpSecret}</div>
 
                     <div className="mt-5 font-mono text-[10px] tracking-[0.2em] text-foreground/50">STEP 2C — CONFIRM A CODE</div>
                     <p className="mt-2 text-xs text-foreground/60">

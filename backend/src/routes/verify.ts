@@ -13,6 +13,7 @@ import {
   isChainEnabled,
 } from "../services/blockchain.js";
 import { config } from "../config.js";
+import { textSimilarity } from "../services/similarity.js";
 
 const router = Router();
 
@@ -35,45 +36,6 @@ async function anchorLog(
     })
     .catch(() => {});
   return { txHash: anchor?.txHash ?? null, status };
-}
-
-/**
- * Calculate Levenshtein distance between two strings.
- */
-function levenshteinDistance(a: string, b: string): number {
-  const m = a.length;
-  const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-
-  for (let i = 0; i <= m; i++) dp[i]![0] = i;
-  for (let j = 0; j <= n; j++) dp[0]![j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (a[i - 1] === b[j - 1]) {
-        dp[i]![j] = dp[i - 1]![j - 1]!;
-      } else {
-        dp[i]![j] = 1 + Math.min(
-          dp[i - 1]![j - 1]!,
-          dp[i]![j - 1]!,
-          dp[i - 1]![j]!
-        );
-      }
-    }
-  }
-
-  return dp[m]![n]!;
-}
-
-/**
- * Calculate text similarity (0-100%) between two strings.
- */
-function textSimilarity(a: string, b: string): number {
-  if (!a || !b) return 0;
-  const maxLen = Math.max(a.length, b.length);
-  if (maxLen === 0) return 100;
-  const distance = levenshteinDistance(a, b);
-  return Math.round(((maxLen - distance) / maxLen) * 100);
 }
 
 // POST /api/verify - Checker uploads a document to verify
@@ -204,12 +166,11 @@ router.post(
           });
           verificationId = log.id;
 
-          // Anchor the verification outcome on-chain (best-effort audit event).
-          const anchor = await anchorLog(log.id, submittedHash, submittedHash, 0);
-          if (anchor.txHash) {
-            // nothing else needed — chain fields are on the log row
-            void anchor;
-          }
+          // Anchor the verification outcome on-chain as a background audit
+          // event — deliberately NOT awaited: the verdict must never wait
+          // on Sepolia block times. The log row is updated when the tx
+          // lands (anchorLog never throws; belt-and-braces catch attached).
+          void anchorLog(log.id, submittedHash, submittedHash, 0).catch(() => {});
         } catch (logErr) {
           // Audit logging must never block the verdict
           console.error("Failed to log VERIFIED verification (non-fatal):", logErr);
@@ -315,13 +276,13 @@ router.post(
         });
         verificationId = log.id;
 
-        // Anchor the verification outcome on-chain (best-effort audit event).
-        await anchorLog(
+        // Background audit anchor (see above) — never blocks the verdict.
+        void anchorLog(
           log.id,
           submittedHash,
           (bestMatch?.sha256Hash as string | undefined) ?? null,
           result === "TAMPERED" ? 1 : 2
-        );
+        ).catch(() => {});
       } catch (logErr) {
         console.error(`Failed to log ${result} verification (non-fatal):`, logErr);
       }
