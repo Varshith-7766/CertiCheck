@@ -1,9 +1,11 @@
 // Production schema for hosted Postgres (Neon/Supabase free tier).
 // Local dev keeps using prisma/schema.prisma (SQLite) — untouched.
 //
-// Render wiring:
-//   build: npx prisma generate --schema=prisma/schema.postgresql.prisma && npm run build
-//   start: npx prisma db push --schema=prisma/schema.postgresql.prisma && node dist/index.js
+// Wiring is self-contained in the repo, no dashboard magic needed:
+//   scripts/use-prod-schema.mjs copies this file over prisma/schema.prisma
+//   during `npm run build` when RENDER=true or NODE_ENV=production, and
+//   scripts/start.mjs runs `prisma db push` before booting on Render.
+// Render dashboard only needs: build `npm run build`, start `npm start`.
 // Models are identical to schema.prisma; only the provider differs.
 // If you change a model here, mirror it in schema.prisma (and vice versa).
 generator client {
