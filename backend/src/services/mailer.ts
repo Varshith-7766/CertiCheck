@@ -14,6 +14,9 @@ function getTransporter(): Transporter | null {
           port: smtp.port,
           secure: smtp.port === 465,
           auth: { user: smtp.user, pass: smtp.pass },
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
         });
       } catch (err) {
         console.error("[mailer] Failed to init SMTP transport:", err);
@@ -71,6 +74,8 @@ export async function sendEmail(opts: {
 /**
  * Verify SMTP connectivity by running transporter.verify().
  * Returns { ok: true } or { ok: false, error: string }.
+ * NOTE: Gmail sometimes hangs on verify() even when sendMail works.
+ * This endpoint has its own timeout to avoid blocking the server.
  */
 export async function verifySmtp(): Promise<{ ok: boolean; error?: string }> {
   const t = getTransporter();
@@ -79,7 +84,13 @@ export async function verifySmtp(): Promise<{ ok: boolean; error?: string }> {
   }
   try {
     console.log("[mailer:verify] Verifying SMTP connection...");
-    await t.verify();
+    // Race against a 20s timeout so we don't hang if Gmail is slow
+    await Promise.race([
+      t.verify(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("SMTP verify timed out after 20s")), 20000)
+      ),
+    ]);
     console.log("[mailer:verify] SMTP connection verified OK");
     return { ok: true };
   } catch (err: any) {
