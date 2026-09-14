@@ -215,6 +215,19 @@ async function start() {
       console.log(`CORS origin: ${config.corsOrigin}`);
       console.log(`Node env: ${config.nodeEnv}`);
       console.log(`Auth: httpOnly cookie sessions, DB-backed revocation`);
+      console.log(
+        `Session cookie: Secure=${config.cookieSecure}; SameSite=${config.cookieSameSite === "none" ? "None" : "Lax"}`
+      );
+      if (config.cookieSameSite === "none" && !config.cookieSecure) {
+        console.error(
+          "[config] INVALID COOKIE COMBO: SameSite=None requires Secure — browsers will reject the session cookie and every login will 401. Set COOKIE_SECURE=true."
+        );
+      }
+      if (config.nodeEnv === "production" && config.cookieSameSite !== "none") {
+        console.error(
+          "[config] PROD WARNING: split-domain deploy needs COOKIE_SAMESITE=none, otherwise cross-site logins will 401."
+        );
+      }
     });
 
     // Integrity scan runs after startup so it never delays first response.
