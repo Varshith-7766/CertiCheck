@@ -9,6 +9,7 @@ import verifyRoutes from "./routes/verify.js";
 import statsRoutes from "./routes/stats.js";
 import { securityHeaders, originCheck, verifyUploadLimiter } from "./middleware/security.js";
 import { generateHash } from "./services/hash.js";
+import { isDevMode } from "./services/mailer.js";
 import { prewarmOcr } from "./services/ocr.js";
 import { getNetworkInfo, getChainStatus, isChainEnabled } from "./services/blockchain.js";
 
@@ -117,6 +118,11 @@ app.get("/api/health", async (_req, res) => {
       blockNumber: chain.blockNumber,
       contractAddress: config.chain.contractAddress || null,
     },
+    smtp: {
+      configured: !isDevMode(),
+      host: config.smtp.host || null,
+      user: config.smtp.user ? `${config.smtp.user.slice(0, 3)}***` : null,
+    },
   });
 });
 
@@ -217,6 +223,9 @@ async function start() {
       console.log(`Auth: httpOnly cookie sessions, DB-backed revocation`);
       console.log(
         `Session cookie: Secure=${config.cookieSecure}; SameSite=${config.cookieSameSite === "none" ? "None" : "Lax"}`
+      );
+      console.log(
+        `SMTP: ${isDevMode() ? "DEV MODE (no email sending)" : `configured — ${config.smtp.host}:${config.smtp.port} as ${config.smtp.user}`}`
       );
       if (config.cookieSameSite === "none" && !config.cookieSecure) {
         console.error(
