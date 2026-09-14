@@ -1,4 +1,10 @@
-const API_URL = import.meta.env["VITE_API_URL"] || "http://localhost:3001/api";
+const RAW_URL =
+  (import.meta.env["VITE_API_URL"] as string | undefined) || "http://localhost:3001/api";
+// The API lives under /api on every backend (local + Render). Operators
+// sometimes set VITE_API_URL to the bare host — normalize so that mistake
+// can never 404 every endpoint again.
+const _base = RAW_URL.replace(/\/+$/, "");
+const API_URL = _base.endsWith("/api") ? _base : `${_base}/api`;
 
 interface ApiOptions {
   method?: string;
