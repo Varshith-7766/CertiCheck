@@ -256,6 +256,9 @@ router.post(
           name: body.name,
           role: body.role,
           institution: body.institution ? body.institution.trim() : null,
+          // When email verification is disabled, auto-verify so the user
+          // goes straight to 2FA setup without hitting the email step.
+          emailVerified: !config.requireEmailVerification,
           // Everyone with a console (admin + checker) must prove they're
           // real (and human) with 2FA before anything unlocks.
           totpRequired: true,
@@ -290,9 +293,11 @@ router.post(
 
       res.status(201).json({
         user: publicUser(user),
-        emailVerified: false,
+        emailVerified: user.emailVerified,
         totpSetupRequired: user.totpRequired && !user.totpEnabled,
-        message: "Registration successful — check your inbox to verify your email.",
+        message: config.requireEmailVerification
+          ? "Registration successful — check your inbox to verify your email."
+          : "Registration successful — set up two-factor authentication to continue.",
         // When SMTP isn't configured, include the link directly so the user
         // can verify without digging through Render logs.
         ...(isDevMode() ? { devVerifyUrl: verifyUrl } : {}),
