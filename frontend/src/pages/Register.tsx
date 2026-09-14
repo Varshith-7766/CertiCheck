@@ -20,6 +20,7 @@ export default function Register() {
   });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [devVerifyUrl, setDevVerifyUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   if (isAuthenticated && user) {
@@ -77,6 +78,12 @@ export default function Register() {
       if (!result.user) {
         setNotice(result.message || "If that email is available, a verification email has been sent.");
       }
+      // Dev mode: when SMTP isn't configured, the verify link comes back
+      // in the response — show it so the user can verify immediately.
+      if (result.devVerifyUrl) {
+        setDevVerifyUrl(result.devVerifyUrl);
+        setNotice("Email not configured on this server — use the link below to verify.");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -99,7 +106,24 @@ export default function Register() {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <Banner tone="error">{error}</Banner>}
-        {notice && <Banner tone="info">{notice}</Banner>}
+        {notice && (
+          <Banner tone="info">
+            {notice}
+            {devVerifyUrl && (
+              <>
+                {" "}
+                <a
+                  href={devVerifyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-semibold"
+                >
+                  Click here to verify your email →
+                </a>
+              </>
+            )}
+          </Banner>
+        )}
 
         <Segmented
           value={formData.role}

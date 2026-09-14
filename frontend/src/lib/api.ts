@@ -81,6 +81,9 @@ export interface RegisterResponse {
   // returns 201 with the same shape but NO user and NO session — the client
   // shows the same "check your inbox" message either way.
   emailVerificationSent?: boolean;
+  // When SMTP isn't configured on the backend (dev mode), the verification
+  // link is returned directly so the user can verify without checking logs.
+  devVerifyUrl?: string;
 }
 
 export interface LoginResponse {
@@ -123,7 +126,7 @@ export const authApi = {
     }),
 
   resendVerification: () =>
-    api<{ message: string }>("/auth/resend-verification", { method: "POST" }),
+    api<{ message: string; devVerifyUrl?: string }>("/auth/resend-verification", { method: "POST" }),
 
   forgot: (email: string) =>
     api<{ message: string }>("/auth/forgot", { method: "POST", body: { email } }),

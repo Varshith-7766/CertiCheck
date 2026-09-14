@@ -66,8 +66,12 @@ export default function Setup2fa() {
   const handleResendEmail = async () => {
     setEmailMessage("");
     try {
-      await resendVerification();
-      setEmailMessage("Verification email sent — check your inbox (and spam).");
+      const devUrl = await resendVerification();
+      if (devUrl) {
+        setEmailMessage(`Email not configured. Click to verify: ${devUrl}`);
+      } else {
+        setEmailMessage("Verification email sent — check your inbox (and spam).");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend verification email");
     }
@@ -207,7 +211,25 @@ export default function Setup2fa() {
                   <Mail size={15} /> I&apos;ve verified — continue
                 </PrimaryButton>
               </div>
-              {emailMessage && <div className="mt-3 text-[13px] font-medium text-good-deep">{emailMessage}</div>}
+              {emailMessage && (
+                <div className="mt-3 text-[13px] font-medium text-good-deep">
+                  {emailMessage.startsWith("Email not configured") ? (
+                    <span>
+                      Email not configured.{" "}
+                      <a
+                        href={emailMessage.split("Click to verify: ")[1]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-accent hover:text-accent/80"
+                      >
+                        Click here to verify your email →
+                      </a>
+                    </span>
+                  ) : (
+                    emailMessage
+                  )}
+                </div>
+              )}
               <div className="mt-6 flex items-center gap-2 text-xs text-faint">
                 <ShieldCheck size={13} /> Inbox control is mandatory for {user.role.toLowerCase()} accounts.
               </div>

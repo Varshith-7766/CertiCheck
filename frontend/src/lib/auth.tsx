@@ -16,7 +16,7 @@ interface AuthContextType {
   register: (data: RegisterPayload) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  resendVerification: () => Promise<void>;
+  resendVerification: () => Promise<string | null>;
   isAuthenticated: boolean;
   pending2FA: boolean;
   pending2FAEmail: string;
@@ -89,7 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resendVerification = useCallback(async () => {
-    await authApi.resendVerification();
+    const data = await authApi.resendVerification();
+    return (data as Record<string, unknown>).devVerifyUrl as string | null;
   }, []);
 
   return (

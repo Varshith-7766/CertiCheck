@@ -31,7 +31,7 @@ import {
   generateOpaqueToken,
   hashOpaqueToken,
 } from "../services/security.js";
-import { sendEmail } from "../services/mailer.js";
+import { sendEmail, isDevMode } from "../services/mailer.js";
 import { config } from "../config.js";
 import {
   registerLimiter,
@@ -293,6 +293,9 @@ router.post(
         emailVerified: false,
         totpSetupRequired: user.totpRequired && !user.totpEnabled,
         message: "Registration successful — check your inbox to verify your email.",
+        // When SMTP isn't configured, include the link directly so the user
+        // can verify without digging through Render logs.
+        ...(isDevMode() ? { devVerifyUrl: verifyUrl } : {}),
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -517,7 +520,10 @@ router.post(
         html: `<p>Hi ${req.user!.name},</p><p>Confirm your email to activate your CertiCheck account:</p><p><a href="${verifyUrl}">Verify email</a></p><p>This link expires in 24 hours.</p>`,
         text: `Confirm your email at ${verifyUrl} (expires in 24h).`,
       });
-      res.json({ message: "Verification email sent" });
+      res.json({
+        message: "Verification email sent",
+        ...(isDevMode() ? { devVerifyUrl: verifyUrl } : {}),
+      });
     } catch (error) {
       console.error("Resend verification error:", error);
       res.status(500).json({ error: "Failed to send verification email" });
