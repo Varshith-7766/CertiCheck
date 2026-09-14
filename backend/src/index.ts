@@ -9,7 +9,7 @@ import verifyRoutes from "./routes/verify.js";
 import statsRoutes from "./routes/stats.js";
 import { securityHeaders, originCheck, verifyUploadLimiter } from "./middleware/security.js";
 import { generateHash } from "./services/hash.js";
-import { isDevMode } from "./services/mailer.js";
+import { isDevMode, verifySmtp } from "./services/mailer.js";
 import { prewarmOcr } from "./services/ocr.js";
 import { getNetworkInfo, getChainStatus, isChainEnabled } from "./services/blockchain.js";
 
@@ -124,6 +124,42 @@ app.get("/api/health", async (_req, res) => {
       user: config.smtp.user ? `${config.smtp.user.slice(0, 3)}***` : null,
     },
   });
+});
+
+// SMTP connectivity test — POST /api/test-smtp
+app.post("/api/test-smtp", async (_req, res) => {
+  if (isDevMode()) {
+    res.json({ ok: false, error: "SMTP not configured — DEV MODE (no SMTP_HOST/SMTP_USER)" });
+    return;
+  }
+  const result = await verifySmtp();
+  if (result.ok) {
+    res.json({ ok: true, message: "SMTP connection verified — Gmail accepted credentials" });
+  } else {
+    res.json({ ok: false, error: result.error });
+  }
+});
+
+// SMTP send test — POST /api/test-smtp-send  { "to": "you@gmail.com" }
+app.post("/api/test-smtp-send", async (req, res) => {
+  if (isDevMode()) {
+    res.json({ ok: false, error: "SMTP not configured — DEV MODE" });
+    return;
+  }
+  const to = req.body?.to || config.smtp.user;
+  try {
+    const { sendEmail } = await import("./services/mailer.js");
+    await sendEmail({
+      to,
+      subject: "CertiCheck SMTP Test",
+      html: "<p>This is a test email from CertiCheck. If you see this, SMTP is working!</p>",
+      text: "This is a test email from CertiCheck. If you see this, SMTP is working!",
+    });
+    res.json({ ok: true, message: `Test email sent to ${to}` });
+  } catch (err: any) {
+    console.error(`[test-smtp-send] FAILED: ${err.message}`);
+    res.json({ ok: false, error: err.message, code: err.code, response: err.response });
+  }
 });
 
 // Routes

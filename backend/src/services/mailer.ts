@@ -47,13 +47,47 @@ export async function sendEmail(opts: {
     console.log(`  Body:    ${(opts.text || opts.html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim()}`);
     return;
   }
-  await t.sendMail({
-    from: config.smtp.from,
-    to: opts.to,
-    subject: opts.subject,
-    html: opts.html,
-    text: opts.text,
-  });
+  console.log(`[mailer] Sending email to ${opts.to} — subject: "${opts.subject}"`);
+  try {
+    const info = await t.sendMail({
+      from: config.smtp.from,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
+    });
+    console.log(`[mailer] Email sent successfully — messageId: ${info.messageId}, response: ${info.response}`);
+  } catch (err: any) {
+    console.error(`[mailer] FAILED to send email to ${opts.to}`);
+    console.error(`[mailer] Error name: ${err.name}`);
+    console.error(`[mailer] Error message: ${err.message}`);
+    if (err.code) console.error(`[mailer] Error code: ${err.code}`);
+    if (err.response) console.error(`[mailer] SMTP response: ${err.response}`);
+    if (err.responseCode) console.error(`[mailer] SMTP responseCode: ${err.responseCode}`);
+    throw err;
+  }
+}
+
+/**
+ * Verify SMTP connectivity by running transporter.verify().
+ * Returns { ok: true } or { ok: false, error: string }.
+ */
+export async function verifySmtp(): Promise<{ ok: boolean; error?: string }> {
+  const t = getTransporter();
+  if (!t) {
+    return { ok: false, error: "No SMTP transporter — check SMTP_HOST / SMTP_USER env vars" };
+  }
+  try {
+    console.log("[mailer:verify] Verifying SMTP connection...");
+    await t.verify();
+    console.log("[mailer:verify] SMTP connection verified OK");
+    return { ok: true };
+  } catch (err: any) {
+    console.error(`[mailer:verify] SMTP verification failed: ${err.message}`);
+    if (err.code) console.error(`[mailer:verify] Error code: ${err.code}`);
+    if (err.response) console.error(`[mailer:verify] SMTP response: ${err.response}`);
+    return { ok: false, error: err.message };
+  }
 }
 
 export { isDevMode };
