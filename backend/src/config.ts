@@ -6,7 +6,7 @@ export const config = {
   uploadDir: process.env.UPLOAD_DIR || "./uploads",
   databaseUrl: process.env.DATABASE_URL,
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000",
-  appUrl: process.env.APP_URL || "http://localhost:3000",
+  appUrl: process.env.APP_URL || process.env.CORS_ORIGIN || "http://localhost:3000",
   nodeEnv: process.env.NODE_ENV || "development",
 
   // HttpOnly session cookie

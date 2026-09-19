@@ -525,12 +525,13 @@ router.post(
         },
       });
       const verifyUrl = `${config.appUrl}/verify-email?token=${token}`;
-      await sendEmail({
+      // Fire-and-forget: email delivery must never block the response.
+      sendEmail({
         to: req.user!.email,
         subject: "Verify your CertiCheck email",
         html: `<p>Hi ${req.user!.name},</p><p>Confirm your email to activate your CertiCheck account:</p><p><a href="${verifyUrl}">Verify email</a></p><p>This link expires in 24 hours.</p>`,
         text: `Confirm your email at ${verifyUrl} (expires in 24h).`,
-      });
+      }).catch((err) => console.error("[resend] verification email failed:", err));
       res.json({
         message: "Verification email sent",
         ...(isDevMode() ? { devVerifyUrl: verifyUrl } : {}),
@@ -569,12 +570,13 @@ router.post(
       });
 
       const resetUrl = `${config.appUrl}/reset?token=${token}`;
-      await sendEmail({
+      // Fire-and-forget: email delivery must never block or fail the response.
+      sendEmail({
         to: user.email,
         subject: "Reset your CertiCheck password",
         html: `<p>Hi ${user.name},</p><p>Reset your password with this link (expires in 20 minutes):</p><p><a href="${resetUrl}">Reset password</a></p><p>If you didn't request this, ignore this email.</p>`,
         text: `Reset your password at ${resetUrl} (expires in 20 minutes). If you didn't request this, ignore this email.`,
-      });
+      }).catch((err) => console.error("[forgot] reset email failed:", err));
 
       res.json({ message: "If that email exists, a reset link was sent" });
     } catch (error) {
