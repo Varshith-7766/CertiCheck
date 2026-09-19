@@ -278,9 +278,10 @@ router.post(
         },
       });
 
-      // Email verification link (dev mode logs it to the console).
+      // Email verification link — fire-and-forget so registration response
+      // is instant; email delivery happens in the background.
       const verifyUrl = `${config.appUrl}/verify-email?token=${verificationToken}`;
-      await sendEmail({
+      sendEmail({
         to: user.email,
         subject: "Verify your CertiCheck email",
         html: `<p>Hi ${user.name},</p><p>Confirm your email to activate your CertiCheck account:</p><p><a href="${verifyUrl}">Verify email</a></p><p>This link expires in 24 hours.</p>`,

@@ -67,7 +67,7 @@ export async function isPasswordBreached(password: string): Promise<boolean> {
         "User-Agent": "CertiCheck", // HIBP requires a UA identifying the service
         "api-version": "2",
       },
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(1500),
     });
     if (!res.ok) throw new HibpUnavailableError();
     const body = await res.text();

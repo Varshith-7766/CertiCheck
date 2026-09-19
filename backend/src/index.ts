@@ -289,6 +289,12 @@ async function start() {
 
     // Integrity scan runs after startup so it never delays first response.
     setTimeout(runBootIntegrityCheck, 1000);
+
+    // Keep-alive: self-ping every 10 minutes to prevent Render free tier
+    // from spinning down the service (saves ~30-50s cold start latency).
+    setInterval(() => {
+      fetch(`http://localhost:${config.port}/api/health`).catch(() => {});
+    }, 10 * 60 * 1000);
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);

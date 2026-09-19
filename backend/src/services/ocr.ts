@@ -107,15 +107,27 @@ async function preprocessImage(input: Buffer): Promise<Buffer> {
   const image = sharp(input);
   const metadata = await image.metadata();
 
+  // Skip resize entirely for small images (common for certificate photos).
+  const needsResize =
+    (metadata.width && metadata.width > 2000) ||
+    (metadata.height && metadata.height > 2000);
+
   let pipeline = image;
-  if (metadata.width && metadata.width > 2000) {
-    pipeline = pipeline.resize({ width: 2000, withoutEnlargement: true });
-  }
-  if (metadata.height && metadata.height > 2000) {
-    pipeline = pipeline.resize({ height: 2000, withoutEnlargement: true });
+  if (needsResize) {
+    if (metadata.width && metadata.width > 2000) {
+      pipeline = pipeline.resize({ width: 2000, withoutEnlargement: true });
+    }
+    if (metadata.height && metadata.height > 2000) {
+      pipeline = pipeline.resize({ height: 2000, withoutEnlargement: true });
+    }
   }
 
-  return pipeline.grayscale().normalize().sharpen().png().toBuffer();
+  // Skip sharpen for small images — OCR accuracy gain is negligible
+  // and it saves ~200ms per image on free-tier CPU.
+  if (needsResize) {
+    return pipeline.grayscale().normalize().sharpen().png().toBuffer();
+  }
+  return pipeline.grayscale().normalize().png().toBuffer();
 }
 
 /**
