@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import fs from "fs";
 import { config, chainEnabled } from "./config.js";
 import { PrismaClient } from "@prisma/client";
 import authRoutes from "./routes/auth.js";
@@ -235,6 +236,12 @@ async function start() {
   try {
     await prisma.$connect();
     console.log("Database connected");
+
+    // Ensure the uploads directory exists (Render's filesystem is ephemeral).
+    if (!fs.existsSync(config.uploadDir)) {
+      fs.mkdirSync(config.uploadDir, { recursive: true });
+      console.log(`Created upload directory: ${config.uploadDir}`);
+    }
 
     // Warm up the Tesseract worker pool now (non-blocking) so the first
     // upload skips engine spin-up.

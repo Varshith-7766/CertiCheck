@@ -17,6 +17,8 @@ function getTransporter(): Transporter | null {
           connectionTimeout: 15000,
           greetingTimeout: 10000,
           socketTimeout: 15000,
+          // Force IPv4 — Render's network can't reach Gmail over IPv6.
+          family: 4,
         });
       } catch (err) {
         console.error("[mailer] Failed to init SMTP transport:", err);
