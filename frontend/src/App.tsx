@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "./lib/auth";
+import { trackPageview } from "./lib/analytics";
 import { ThemeProvider } from "./lib/theme";
 import { Spinner } from "./components/ui";
 import Landing from "./pages/Landing";
@@ -43,6 +44,8 @@ function AnimatedRoutes() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // SPA route change — gtag.js only auto-tracks the first load.
+    trackPageview(location.pathname);
   }, [location.pathname]);
 
   return (
