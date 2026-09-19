@@ -298,6 +298,9 @@ router.post(
         message: config.requireEmailVerification
           ? "Registration successful — check your inbox to verify your email."
           : "Registration successful — set up two-factor authentication to continue.",
+        // Session token in body for cross-origin deploys where httpOnly
+        // cookies may not be sent (separate Render frontend/backend domains).
+        sessionToken: token,
         // When SMTP isn't configured, include the link directly so the user
         // can verify without digging through Render logs.
         ...(isDevMode() ? { devVerifyUrl: verifyUrl } : {}),
@@ -354,6 +357,7 @@ router.post(
           requires2fa: true,
           email: user.email,
           message: "Two-factor authentication required",
+          sessionToken: token,
         });
         return;
       }
@@ -382,6 +386,7 @@ router.post(
       res.json({
         user: publicUser(fresh!),
         totpSetupRequired: fresh!.totpRequired && !fresh!.totpEnabled,
+        sessionToken: token,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

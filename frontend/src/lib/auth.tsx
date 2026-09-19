@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { authApi, type User, type RegisterPayload, type RegisterResponse } from "./api";
+import { authApi, type User, type RegisterPayload, type RegisterResponse, setSessionToken, clearSessionToken } from "./api";
 
 interface AuthContextType {
   user: User | null;
@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await authApi.login({ email, password });
+    if (data.sessionToken) setSessionToken(data.sessionToken);
     if (data.requires2fa) {
       setPending2FA(true);
       setPending2FAEmail(data.email || "");
@@ -73,11 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await authApi.register(data);
     // A fresh registration mints a session; an already-registered address
     // returns 201 with no user (anti-enumeration) — leave auth state untouched.
+    if (result.sessionToken) setSessionToken(result.sessionToken);
     if (result.user) setUser(result.user);
     return result;
   }, []);
 
   const logout = useCallback(async () => {
+    clearSessionToken();
     try {
       await authApi.logout();
     } catch {

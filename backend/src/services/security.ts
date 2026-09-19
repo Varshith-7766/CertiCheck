@@ -67,7 +67,7 @@ export async function isPasswordBreached(password: string): Promise<boolean> {
         "User-Agent": "CertiCheck", // HIBP requires a UA identifying the service
         "api-version": "2",
       },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) throw new HibpUnavailableError();
     const body = await res.text();
@@ -75,10 +75,8 @@ export async function isPasswordBreached(password: string): Promise<boolean> {
       .split("\n")
       .some((line) => line.split(":")[0].toUpperCase() === suffix);
   } catch (err) {
-    // Fail-open by default (dev/offline friendly). Fail closed in strict/prod.
-    if (config.hibpStrict || config.nodeEnv === "production") {
-      throw new HibpUnavailableError();
-    }
+    // Fail-open: HIBP being down should never block registration.
+    // Log the failure so ops can see it, but let the user through.
     console.warn("[hibp] lookup failed, failing open:", (err as Error).message);
     return false;
   }

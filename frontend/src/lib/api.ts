@@ -6,6 +6,19 @@ const RAW_URL =
 const _base = RAW_URL.replace(/\/+$/, "");
 const API_URL = _base.endsWith("/api") ? _base : `${_base}/api`;
 
+// Cross-origin session token — stored in sessionStorage so Bearer auth works
+// when httpOnly cookies can't be sent across separate Render domains.
+const SESSION_KEY = "cc_session_token";
+export function getSessionToken(): string | null {
+  try { return sessionStorage.getItem(SESSION_KEY); } catch { return null; }
+}
+export function setSessionToken(token: string) {
+  try { sessionStorage.setItem(SESSION_KEY, token); } catch { /* SSR/sandbox */ }
+}
+export function clearSessionToken() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* SSR/sandbox */ }
+}
+
 interface ApiOptions {
   method?: string;
   body?: unknown;
@@ -25,10 +38,17 @@ export async function api<T = unknown>(
     requestHeaders["Content-Type"] = "application/json";
   }
 
+  // Send session token as Bearer header for cross-origin deploys where
+  // httpOnly cookies may not be sent (separate Render frontend/backend domains).
+  const sessionToken = getSessionToken();
+  if (sessionToken && !requestHeaders["Authorization"]) {
+    requestHeaders["Authorization"] = `Bearer ${sessionToken}`;
+  }
+
   const config: RequestInit = {
     method,
     headers: requestHeaders,
-    // httpOnly session cookie — sent automatically, never stored client-side.
+    // Also send cookies for same-origin or when Bearer isn't available.
     credentials: "include",
   };
 
@@ -77,6 +97,7 @@ export interface RegisterResponse {
   emailVerified?: boolean;
   totpSetupRequired?: boolean;
   message?: string;
+  sessionToken?: string;
   // Anti-enumeration (F8): when the address is already registered the server
   // returns 201 with the same shape but NO user and NO session — the client
   // shows the same "check your inbox" message either way.
@@ -92,6 +113,7 @@ export interface LoginResponse {
   totpSetupRequired?: boolean;
   email?: string;
   message?: string;
+  sessionToken?: string;
 }
 
 export interface SessionInfo {
