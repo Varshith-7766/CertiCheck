@@ -2,7 +2,12 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import fs from "fs";
+import dns from "dns";
 import { config, chainEnabled } from "./config.js";
+
+// Force IPv4 for all DNS lookups — Render's network can't reach Gmail
+// over IPv6 (ENETUNREACH), which causes SMTP and other connections to fail.
+dns.setDefaultResultOrder("ipv4first");
 import { PrismaClient } from "@prisma/client";
 import authRoutes from "./routes/auth.js";
 import certificateRoutes from "./routes/certificates.js";
